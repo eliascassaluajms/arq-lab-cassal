@@ -3,7 +3,7 @@ import {
   Activity, ArrowDownRight, ArrowLeft, ArrowRight, BookOpen, Check,
   CheckCircle2, ChevronDown, CircleHelp, CircuitBoard, Cpu, Download,
   GraduationCap, HardDrive, Home, Laptop, Lightbulb, Menu, MonitorCog,
-  NotebookPen, Search, ShieldCheck, Sparkles, Wifi, WifiOff, X,
+  Moon, NotebookPen, Search, ShieldCheck, Sparkles, Sun, Wifi, WifiOff, X,
   type LucideIcon,
 } from 'lucide-react'
 import { units, type Unit, type UnitId } from './course'
@@ -32,9 +32,11 @@ function savedValue<T>(key: string, fallback: T): T {
 
 function App() {
   const [unitId, setUnitId] = useState<UnitId | null>(urlUnit)
+  const [bankOpen, setBankOpen] = useState(() => new URLSearchParams(location.search).get('vista') === 'banco')
   const [tab, setTab] = useState<TabId>('class')
   const [menuOpen, setMenuOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => savedValue('arq1-theme', 'light'))
   const [online, setOnline] = useState(navigator.onLine)
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null)
   const [done, setDone] = useState<UnitId[]>(() => savedValue('arq1-completed', []))
@@ -42,7 +44,10 @@ function App() {
   const activeUnit = units.find((item) => item.id === unitId) ?? null
 
   useEffect(() => {
-    const syncUrl = () => setUnitId(urlUnit())
+    const syncUrl = () => {
+      setUnitId(urlUnit())
+      setBankOpen(new URLSearchParams(location.search).get('vista') === 'banco')
+    }
     const goOnline = () => setOnline(true)
     const goOffline = () => setOnline(false)
     const offerInstall = (event: Event) => { event.preventDefault(); setInstallEvent(event as InstallEvent) }
@@ -60,12 +65,26 @@ function App() {
 
   useEffect(() => localStorage.setItem('arq1-completed', JSON.stringify(done)), [done])
   useEffect(() => localStorage.setItem('arq1-notes', JSON.stringify(notes)), [notes])
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    localStorage.setItem('arq1-theme', JSON.stringify(theme))
+  }, [theme])
 
   function navigate(next: UnitId | null) {
-    setUnitId(next); setTab('class'); setMenuOpen(false); setQuery('')
+    setUnitId(next); setBankOpen(false); setTab('class'); setMenuOpen(false); setQuery('')
     const url = new URL(location.href)
     if (next) url.searchParams.set('unidad', next)
     else url.searchParams.delete('unidad')
+    url.searchParams.delete('vista')
+    history.pushState({}, '', url)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function navigateToBank() {
+    setUnitId(null); setBankOpen(true); setMenuOpen(false); setQuery('')
+    const url = new URL(location.href)
+    url.searchParams.delete('unidad')
+    url.searchParams.set('vista', 'banco')
     history.pushState({}, '', url)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -81,7 +100,8 @@ function App() {
       <div className="brand-lockup"><div className="brand-mark"><Cpu size={23} /></div><div><span className="brand-name">ARQ<span>/</span>LAB</span><span className="brand-caption">Aula de arquitectura</span></div><button className="icon-button sidebar-close" aria-label="Cerrar menú" onClick={() => setMenuOpen(false)}><X size={20} className="icon-animate" /></button></div>
       <nav className="side-nav" aria-label="Navegación del curso">
         <span className="nav-label">ESPACIO DE APRENDIZAJE</span>
-        <button className={`nav-link ${!activeUnit ? 'nav-link-active' : ''}`} onClick={() => navigate(null)}><Home size={19} className="icon-animate" /><span>Inicio</span>{!activeUnit && <span className="nav-active-mark" />}</button>
+        <button className={`nav-link ${!activeUnit && !bankOpen ? 'nav-link-active' : ''}`} onClick={() => navigate(null)}><Home size={19} className="icon-animate" /><span>Inicio</span>{!activeUnit && !bankOpen && <span className="nav-active-mark" />}</button>
+        <button className={`nav-link ${bankOpen ? 'nav-link-active' : ''}`} onClick={navigateToBank}><CircleHelp size={19} className="icon-animate" /><span>Banco de preguntas</span>{bankOpen && <span className="nav-active-mark" />}</button>
         <div className="nav-divider" /><div className="nav-heading"><span className="nav-label">RUTA FORMATIVA</span><span className="nav-count">06</span></div>
         {units.map((unit, index) => { const Icon = unitIcons[index]; return <button key={unit.id} className={`nav-link unit-nav-link ${unitId === unit.id ? 'nav-link-active' : ''}`} onClick={() => navigate(unit.id)} aria-current={unitId === unit.id ? 'page' : undefined}><span className={`nav-unit-icon tone-${unit.tone}`}><Icon size={17} className="icon-animate" /></span><span className="nav-unit-text"><span>{unit.code}</span>{unit.title}</span>{done.includes(unit.id) && <CheckCircle2 size={16} className="nav-completed" />}{unitId === unit.id && <span className="nav-active-mark" />}</button> })}
       </nav>
@@ -89,13 +109,13 @@ function App() {
     </aside>
 
     <div className="app-main">
-      <header className="topbar"><div className="topbar-leading"><button className="icon-button menu-toggle" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}><Menu size={22} className="icon-animate" /></button><span className="breadcrumb">DIC-112 <span>/</span> Arquitectura de Computadores I</span></div><div className="topbar-actions"><span className={`connection-status ${online ? '' : 'connection-offline'}`}>{online ? <Wifi size={15} /> : <WifiOff size={15} />}{online ? 'En línea' : 'Disponible sin conexión'}</span>{installEvent && <button className="install-button" onClick={install}><Download size={16} className="icon-animate" /> Instalar app</button>}<div className="avatar-chip" aria-label="Estudiante">AR</div></div></header>
-      <main className="content-area"><div className="content-inner">{activeUnit ? <UnitPage unit={activeUnit} tab={tab} setTab={setTab} done={done.includes(activeUnit.id)} toggleDone={() => setDone((current) => current.includes(activeUnit.id) ? current.filter((id) => id !== activeUnit.id) : [...current, activeUnit.id])} note={notes[activeUnit.id] ?? ''} setNote={(value) => setNotes((current) => ({ ...current, [activeUnit.id]: value }))} onNavigate={navigate} /> : <HomePage query={query} setQuery={setQuery} doneCount={done.length} onNavigate={navigate} />}</div></main>
+      <header className="topbar"><div className="topbar-leading"><button className="icon-button menu-toggle" aria-label="Abrir menú" onClick={() => setMenuOpen(true)}><Menu size={22} className="icon-animate" /></button><span className="breadcrumb">DIC-112 <span>/</span> Arquitectura de Computadores I</span></div><div className="topbar-actions"><button className="theme-switch" aria-label={theme === 'light' ? 'Activar tema oscuro' : 'Activar tema claro'} title={theme === 'light' ? 'Tema oscuro' : 'Tema claro'} onClick={() => setTheme((current) => current === 'light' ? 'dark' : 'light')}>{theme === 'light' ? <Moon size={18} className="icon-animate" /> : <Sun size={18} className="icon-animate" />}<span>{theme === 'light' ? 'Oscuro' : 'Claro'}</span></button><span className={`connection-status ${online ? '' : 'connection-offline'}`}>{online ? <Wifi size={15} /> : <WifiOff size={15} />}{online ? 'En línea' : 'Disponible sin conexión'}</span>{installEvent && <button className="install-button" onClick={install}><Download size={16} className="icon-animate" /> Instalar app</button>}<div className="avatar-chip" aria-label="Estudiante">AR</div></div></header>
+      <main className="content-area"><div className="content-inner">{activeUnit ? <UnitPage unit={activeUnit} tab={tab} setTab={setTab} done={done.includes(activeUnit.id)} toggleDone={() => setDone((current) => current.includes(activeUnit.id) ? current.filter((id) => id !== activeUnit.id) : [...current, activeUnit.id])} note={notes[activeUnit.id] ?? ''} setNote={(value) => setNotes((current) => ({ ...current, [activeUnit.id]: value }))} onNavigate={navigate} /> : bankOpen ? <QuestionBankPage query={query} setQuery={setQuery} /> : <HomePage query={query} setQuery={setQuery} doneCount={done.length} onNavigate={navigate} onOpenBank={navigateToBank} />}</div></main>
     </div>
   </div>
 }
 
-function HomePage({ query, setQuery, doneCount, onNavigate }: { query: string; setQuery: (value: string) => void; doneCount: number; onNavigate: (id: UnitId | null) => void }) {
+function HomePage({ query, setQuery, doneCount, onNavigate, onOpenBank }: { query: string; setQuery: (value: string) => void; doneCount: number; onNavigate: (id: UnitId | null) => void; onOpenBank: () => void }) {
   const visible = units.filter((unit) => [unit.title, unit.summary, ...unit.topics, ...unit.lab.steps, ...unit.autonomous].join(' ').toLocaleLowerCase('es').includes(query.trim().toLocaleLowerCase('es')))
   return <>
     <section className="welcome-row"><div><div className="eyebrow"><span className="eyebrow-dot" /> CURSO · PRIMER SEMESTRE</div><h1>Explora lo que ocurre<br /><span>dentro del computador.</span></h1><p className="welcome-copy">Conceptos, prácticas y actividades para entender la arquitectura desde sus componentes.</p></div><div className="welcome-stamp"><div className="stamp-ring"><CircuitBoard size={35} className="icon-animate" /></div><span>TEORÍA<br />+ PRÁCTICA</span></div></section>
@@ -104,6 +124,7 @@ function HomePage({ query, setQuery, doneCount, onNavigate }: { query: string; s
     <section className="route-section"><div className="section-heading"><div><span className="section-kicker">MAPA DEL CURSO</span><h2>Tu ruta formativa</h2></div><label className="search-box"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar tema o práctica" aria-label="Buscar tema o práctica" />{query && <button type="button" className="clear-search" onClick={() => setQuery('')} aria-label="Limpiar búsqueda"><X size={15} /></button>}</label></div>
       <div className="unit-grid">{visible.map((unit) => { const index = units.indexOf(unit); const Icon = unitIcons[index]; return <button key={unit.id} className={`unit-card tone-${unit.tone}`} onClick={() => onNavigate(unit.id)}><span className="unit-card-top"><span className="unit-symbol"><Icon size={22} className="icon-animate" /></span><span className="unit-code">{unit.code}</span></span><span className="unit-card-title">{unit.title}<ArrowRight size={17} className="card-arrow icon-animate" /></span><span className="unit-card-summary">{unit.summary}</span><span className="unit-card-bottom"><span>{unit.topics.length} temas</span><span className="unit-card-dot" /><span>clase + práctica</span></span></button> })}{visible.length === 0 && <div className="empty-results"><Search size={25} /><strong>No encontramos ese tema</strong><span>Prueba con “memoria”, “buses” o “mantenimiento”.</span></div>}</div>
     </section>
+    <section className="bank-promo"><div><span className="section-kicker">REPASO DEL CURSO</span><h2>¿Quieres conectar los temas?</h2><p>Explora preguntas de opción múltiple organizadas por elemento de competencia.</p></div><button onClick={onOpenBank}>Abrir banco de preguntas <ArrowRight size={18} className="icon-animate" /></button></section>
     <section className="bottom-note"><div className="bottom-note-icon"><Lightbulb size={21} className="icon-animate" /></div><div><strong>Aprende a tu ritmo, practica con propósito.</strong><p>Las notas y unidades revisadas se guardan en este dispositivo.</p></div><span className="local-badge">SOLO EN ESTE EQUIPO</span></section><Footer />
   </>
 }
@@ -123,7 +144,24 @@ function UnitPage({ unit, tab, setTab, done, toggleDone, note, setNote, onNaviga
 }
 
 function ClassContent({ unit }: { unit: Unit }) {
-  return <div className="content-block enter-content"><div className="panel-overline"><span className="section-kicker">CLASE MAGISTRAL</span><span className="duration-pill"><Activity size={14} /> Ruta conceptual</span></div><h2>Primero entiende la idea.<br /><span>Luego conecta las piezas.</span></h2><p className="panel-intro">Construye conceptos paso a paso y relaciónalos con componentes que encontrarás en un computador real.</p><div className="topic-cards">{unit.lesson.map((section, i) => <div className="concept-row" key={section.title}><span className="concept-index">{String(i + 1).padStart(2, '0')}</span><div><h3>{section.title}</h3><p>{section.text}</p></div><ChevronDown size={17} className="concept-arrow" /></div>)}</div><div className="key-idea"><span className="key-idea-icon"><Lightbulb size={19} className="icon-animate" /></span><div><span className="micro-label">IDEA PARA RECORDAR</span><p>{unit.keyIdea}</p></div></div></div>
+  const [slideIndex, setSlideIndex] = useState(0)
+  const slide = unit.presentation[slideIndex]
+  return <div className="content-block enter-content"><div className="panel-overline"><span className="section-kicker">PRESENTACIÓN GUIADA · {unit.code}</span><span className="duration-pill"><Activity size={14} /> {unit.presentation.length} diapositivas</span></div><h2>{unit.title}<br /><span>conceptos y conexiones.</span></h2><p className="panel-intro">Secuencia para explicar, ejemplificar y guiar preguntas en clase.</p>
+    <div className="slide-progress"><span>DIAPOSITIVA {String(slideIndex + 1).padStart(2, '0')} / {String(unit.presentation.length).padStart(2, '0')}</span><div><span style={{ width: `${((slideIndex + 1) / unit.presentation.length) * 100}%` }} /></div></div>
+    <article className="presentation-slide" key={`${unit.id}-${slideIndex}`}><span className="slide-number">{String(slideIndex + 1).padStart(2, '0')}</span><h3>{slide.title}</h3><p className="slide-explanation">{slide.explanation}</p><div className="slide-points"><span className="micro-label">PUNTOS PARA EXPLICAR</span><ul>{slide.keyPoints.map((point) => <li key={point}>{point}</li>)}</ul></div><div className="slide-example"><span><Lightbulb size={16} /> EJEMPLO PARA PIZARRA</span><p>{slide.example}</p></div><div className="teacher-prompt"><span><GraduationCap size={16} /> GUÍA PARA CONDUCIR LA CLASE</span><p>{slide.teacherPrompt}</p></div></article>
+    <div className="slide-controls"><button disabled={slideIndex === 0} onClick={() => setSlideIndex((index) => Math.max(index - 1, 0))}><ArrowLeft size={16} /> Anterior</button><div className="slide-dots" aria-label="Seleccionar diapositiva">{unit.presentation.map((item, index) => <button key={item.title} aria-label={`Diapositiva ${index + 1}: ${item.title}`} aria-current={slideIndex === index ? 'step' : undefined} className={slideIndex === index ? 'slide-dot-active' : ''} onClick={() => setSlideIndex(index)} />)}</div><button onClick={() => setSlideIndex((index) => Math.min(index + 1, unit.presentation.length - 1))}>Siguiente <ArrowRight size={16} /></button></div>
+    <div className="key-idea"><span className="key-idea-icon"><Lightbulb size={19} className="icon-animate" /></span><div><span className="micro-label">IDEA CENTRAL DE LA UNIDAD</span><p>{unit.keyIdea}</p></div></div></div>
+}
+
+function QuestionBankPage({ query, setQuery }: { query: string; setQuery: (value: string) => void }) {
+  const [unitFilter, setUnitFilter] = useState<UnitId | 'all'>('all')
+  const questionRows = units.flatMap((unit) => unit.questions.map((question, index) => ({ unit, question, number: index + 1 })))
+  const filteredQuestions = questionRows.filter(({ unit, question }) => {
+    const matchesUnit = unitFilter === 'all' || unit.id === unitFilter
+    const haystack = [question.prompt, ...question.options, question.explanation, unit.title].join(' ').toLocaleLowerCase('es')
+    return matchesUnit && haystack.includes(query.trim().toLocaleLowerCase('es'))
+  })
+  return <section className="question-bank-page"><button className="back-link" onClick={() => { history.pushState({}, '', location.pathname); window.dispatchEvent(new PopStateEvent('popstate')) }}><ArrowLeft size={17} className="icon-animate" /> Volver al curso</button><div className="bank-heading"><div><div className="eyebrow"><span className="eyebrow-dot" /> BANCO GENERAL · EC1–EC6</div><h1>Preguntas para <span>repasar.</span></h1><p>Cuestionarios de opción múltiple basados en los temas del curso. Funcionan como material de estudio: no califican ni guardan respuestas.</p></div><div className="bank-total"><strong>{filteredQuestions.length}</strong><span>preguntas<br />disponibles</span></div></div><div className="bank-filters"><label className="search-box"><Search size={18} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar conceptos, respuestas o unidades" aria-label="Buscar en el banco de preguntas" /></label><label className="unit-filter"><span>Filtrar por EC</span><select value={unitFilter} onChange={(event) => setUnitFilter(event.target.value as UnitId | 'all')}><option value="all">Todos los elementos</option>{units.map((unit) => <option key={unit.id} value={unit.id}>{unit.code} · {unit.title}</option>)}</select></label></div><div className="bank-question-list">{filteredQuestions.map(({ unit, question, number }) => <article className="question-card bank-question-card" key={`${unit.id}-${question.prompt}`}><div className="bank-question-meta"><span className={`bank-unit-tag tone-${unit.tone}`}>{unit.code} · {unit.title}</span><span className="question-number">PREGUNTA {String(number).padStart(2, '0')}</span></div><h2>{question.prompt}</h2><ol className="answer-options">{question.options.map((option, index) => <li key={option}><span>{String.fromCharCode(65 + index)}</span>{option}</li>)}</ol><details className="answer-explanation"><summary>Ver respuesta orientativa <ChevronDown size={16} /></summary><p><strong>{String.fromCharCode(65 + question.correct)}.</strong> {question.explanation}</p></details></article>)}{filteredQuestions.length === 0 && <div className="empty-results"><Search size={25} /><strong>No hay preguntas con esos filtros</strong><span>Cambia el elemento de competencia o la búsqueda.</span></div>}</div><Footer /></section>
 }
 
 function LabContent({ unit, note, setNote }: { unit: Unit; note: string; setNote: (value: string) => void }) {

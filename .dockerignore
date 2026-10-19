@@ -1,0 +1,15 @@
+node_modules
+dist
+.git
+.github
+.vscode
+coverage
+*.log
+.env
+.env.*
+!.env.example
+*.pdf
+*.doc
+*.docx
+*.docm
+*.odt

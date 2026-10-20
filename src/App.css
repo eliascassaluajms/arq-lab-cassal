@@ -233,6 +233,9 @@
 .slide-progress { display: flex; align-items: center; gap: 10px; margin: 21px 0 9px; color: #849082; font-size: 8px; font-weight: 800; letter-spacing: .1em; }
 .slide-progress > div { height: 5px; flex: 1; overflow: hidden; border-radius: 8px; background: #e9eee4; }
 .slide-progress > div > span { display: block; height: 100%; border-radius: inherit; background: #8dbd69; transition: width .25s ease; }
+.slide-topic { display: block; margin-bottom: 7px; color: #557c58; font-size: 8px; font-weight: 800; letter-spacing: .1em; }
+.source-note { margin: 0 0 10px; padding: 9px 11px; border-left: 3px solid #aec48d; background: #f1f4e8; color: #718070; font-size: 9px; line-height: 1.5; }
+.source-note strong { color: #4f6b50; }
 .presentation-slide { position: relative; padding: 19px; border: 1px solid #e2e8dc; border-radius: 7px; background: #fbfcf7; animation: lift-in .28s both; }
 .slide-number { position: absolute; top: 15px; right: 17px; color: #d2dfc9; font-family: var(--heading); font-size: 28px; font-weight: 700; }
 .presentation-slide h3 { position: relative; max-width: 85%; margin: 0 0 11px; color: #26382b; font-family: var(--heading); font-size: 19px; line-height: 1.2; }
@@ -286,6 +289,8 @@
 :root[data-theme="dark"] .course-stats, :root[data-theme="dark"] .objective-band, :root[data-theme="dark"] .aside-card, :root[data-theme="dark"] .equipment-strip, :root[data-theme="dark"] .bank-total { background: #1c2620; }
 :root[data-theme="dark"] .stat-item > span:last-child, :root[data-theme="dark"] .stat-progress-copy, :root[data-theme="dark"] .stat-progress-copy strong, :root[data-theme="dark"] .unit-card-summary, :root[data-theme="dark"] .unit-card-bottom, :root[data-theme="dark"] .concept-row h3, :root[data-theme="dark"] .topic-list li, :root[data-theme="dark"] .evidence-card p { color: #b4c0b3; }
 :root[data-theme="dark"] .key-idea, :root[data-theme="dark"] .slide-points, :root[data-theme="dark"] .objective-icon, :root[data-theme="dark"] .semester-note, :root[data-theme="dark"] .bank-promo { border-color: #39483a; background: #26332a; }
+:root[data-theme="dark"] .source-note { border-color: #688452; background: #253126; color: #bdcbb8; }
+:root[data-theme="dark"] .source-note strong, :root[data-theme="dark"] .slide-topic { color: #acd29a; }
 :root[data-theme="dark"] .key-idea p, :root[data-theme="dark"] .slide-points ul, :root[data-theme="dark"] .slide-example p, :root[data-theme="dark"] .teacher-prompt p { color: #c5d1c2; }
 :root[data-theme="dark"] .teacher-prompt { border-color: #354b40; background: #202e27; }
 :root[data-theme="dark"] .teacher-prompt > span { color: #9bc5a7; }

@@ -1,16 +1,18 @@
+import { lessonPresentations } from './lessonPresentations'
+
 export type UnitId = 'ec1' | 'ec2' | 'ec3' | 'ec4' | 'ec5' | 'ec6'
 
 type Question = { prompt: string; options: string[]; correct: number; explanation: string }
-type LessonSlide = { title: string; explanation: string; keyPoints: string[]; example: string; teacherPrompt: string }
+export type LessonSlide = { topic?: string; title: string; explanation: string; keyPoints: string[]; example: string; teacherPrompt: string }
 
 export type Unit = {
-  id: UnitId; code: string; title: string; tone: string; summary: string; objective: string; evidence: string
+  id: UnitId; code: string; title: string; tone: string; summary: string; objective: string; evidence: string; sourceNote?: string
   topics: string[]; lesson: { title: string; text: string }[]; presentation: LessonSlide[]; keyIdea: string
   lab: { title: string; objective: string; equipment: string[]; safety: string; steps: string[]; expected: string }
   autonomous: string[]; reflection: string; questions: Question[]
 }
 
-export const units: Unit[] = [
+const baseUnits: Unit[] = [
   {
     id: 'ec1', code: 'EC1', title: 'Memorias', tone: 'mint',
     summary: 'Cómo se guarda y se recupera la información, desde los registros hasta el almacenamiento.',
@@ -186,3 +188,13 @@ export const units: Unit[] = [
     ],
   },
 ]
+
+export const units: Unit[] = baseUnits.map((unit) => {
+  const expanded = lessonPresentations[unit.id]
+  return {
+    ...unit,
+    topics: expanded.slides.map((slide) => slide.topic ?? slide.title),
+    presentation: expanded.slides,
+    sourceNote: expanded.sourceNote,
+  }
+})
